@@ -73,6 +73,21 @@ LearnFlow is an AI-powered study platform built to help students learn faster an
 10. Homepage 10
     ![](assets/screenshots/LearnFlow%20Homepage%20-%2010.png)
 
+    ### Auth screenshots
+
+1. Sign In
+   ![](assets/screenshots/Sign%20In.png)
+2. Register / Sign-up
+   ![](assets/screenshots/Register%20Sign-up.png)
+
+### Contact screenshot
+
+- Contact Us page
+  ![](assets/screenshots/Contact%20US%20page.png)
+
+> All screenshots are included from `assets/screenshots/`.
+
+
 ### Dashboard screenshots
 
 1. Dashboard 1
@@ -130,21 +145,7 @@ LearnFlow is an AI-powered study platform built to help students learn faster an
    ![](assets/screenshots/LearnFlow%20dashboard%20dark%20theme%20-%206.png)
 7. Dark theme 7
    ![](assets/screenshots/LearnFlow%20dashboard%20dark%20theme%20-%207.png)
-
-### Auth screenshots
-
-1. Sign In
-   ![](assets/screenshots/Sign%20In.png)
-2. Register / Sign-up
-   ![](assets/screenshots/Register%20Sign-up.png)
-
-### Contact screenshot
-
-- Contact Us page
-  ![](assets/screenshots/Contact%20US%20page.png)
-
-> All screenshots are included from `assets/screenshots/`.
-
+   
 ## Quick start
 
 ```bash
