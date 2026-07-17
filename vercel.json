@@ -7,6 +7,14 @@
     {
       "path": "/api/cron/purge-deleted-sessions",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/ai-usage-reset-daily",
+      "schedule": "5 * * * *"
+    },
+    {
+      "path": "/api/cron/ai-usage-reset-monthly",
+      "schedule": "15 0 * * *"
     }
   ]
 }

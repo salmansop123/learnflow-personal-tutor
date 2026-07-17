@@ -10,6 +10,8 @@ from typing import Sequence, Union
 import sqlalchemy as sa
 from alembic import op
 
+from app.db.migration_helpers import column_exists
+
 revision: str = "a1b2c3d4e5f6"
 down_revision: Union[str, None] = "ff74b0f69d0e"
 branch_labels: Union[str, Sequence[str], None] = None
@@ -17,7 +19,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column("User", sa.Column("hashedPassword", sa.String(), nullable=True))
+    if not column_exists("User", "hashedPassword"):
+        op.add_column("User", sa.Column("hashedPassword", sa.String(), nullable=True))
 
 
 def downgrade() -> None:

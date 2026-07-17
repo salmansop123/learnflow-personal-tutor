@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 
 from app.api.deps import CronAuth, DbSession
 from app.schemas.cron import DueReminderItem
-from app.services import reminder_service, study_service
+from app.services import ai_usage_service, reminder_service, study_service
 
 router = APIRouter(prefix="/cron", tags=["cron"])
 
@@ -34,3 +34,23 @@ def purge_deleted_sessions(
     """Permanently delete study sessions soft-deleted more than 30 days ago."""
     removed = study_service.purge_deleted_sessions_older_than_days(db, days=30)
     return {"removed": removed}
+
+
+@router.post("/ai-usage/reset-daily")
+def reset_ai_usage_daily(
+    db: DbSession,
+    _: CronAuth,
+) -> dict[str, int]:
+    """Reset daily AI chat counters for users past their daily reset time."""
+    reset = ai_usage_service.reset_daily_all(db)
+    return {"reset": reset}
+
+
+@router.post("/ai-usage/reset-monthly")
+def reset_ai_usage_monthly(
+    db: DbSession,
+    _: CronAuth,
+) -> dict[str, int]:
+    """Reset monthly AI feature counters for users past their monthly reset date."""
+    reset = ai_usage_service.reset_monthly_all(db)
+    return {"reset": reset}

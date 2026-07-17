@@ -45,3 +45,17 @@ def verify_cron_secret(
 
 
 CronAuth = Annotated[None, Depends(verify_cron_secret)]
+
+
+def verify_internal_service(
+    authorization: str | None = Header(None),
+) -> None:
+    settings = get_settings()
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing authorization")
+    token = authorization.removeprefix("Bearer ").strip()
+    if token != settings.auth_secret:
+        raise HTTPException(status_code=401, detail="Invalid authorization")
+
+
+InternalServiceAuth = Annotated[None, Depends(verify_internal_service)]

@@ -121,10 +121,8 @@ export function QuizPageClient({
         studentName={session?.user?.name}
         onAnswerChange={engine.answerQuestion}
         onAddTimeExtension={engine.addTimeExtension}
-        onSubmitPaper={(opts) => void engine.endQuiz(opts)}
-        onCancelPaper={(opts) =>
-          void engine.endQuiz({ partial: true, ...opts })
-        }
+        onSubmitPaper={(opts) => engine.endQuiz(opts)}
+        onCancelPaper={(opts) => engine.endQuiz({ partial: true, ...opts })}
         isSubmitting={engine.isSaving}
       />
     </div>

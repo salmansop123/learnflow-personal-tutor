@@ -12,6 +12,11 @@ import {
   findLastUserMessage,
 } from "@/lib/ai-messages";
 import { buildAISystemPrompt } from "@/lib/ai-context";
+import {
+  AiUsageLimitError,
+  consumeAiUsage,
+  usageLimitResponse,
+} from "@/lib/ai-usage";
 import { appendConversationMessages } from "@/lib/conversations";
 import { getTutorModel } from "@/lib/openrouter";
 import { getProfile } from "@/lib/profile";
@@ -70,6 +75,15 @@ export async function POST(req: Request) {
 
     const body = bodySchema.parse(raw);
     const messages = body.messages as UIMessage[];
+
+    try {
+      await consumeAiUsage(session.user!.id, "chat");
+    } catch (err) {
+      if (err instanceof AiUsageLimitError) {
+        return usageLimitResponse(err);
+      }
+      throw err;
+    }
 
     const profile = await getProfile(session.user!.id);
     const modelMessages = await convertToModelMessages(messages);

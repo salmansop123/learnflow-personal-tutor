@@ -8,7 +8,7 @@ cd "$ROOT_DIR"
 
 BACKEND_DIR="${ROOT_DIR}/backend"
 VENV_DIR="${BACKEND_DIR}/.venv"
-DOCKER_DB_PORT="${DOCKER_DB_PORT:-5433}"
+DOCKER_DB_PORT="${DOCKER_DB_PORT:-5434}"
 DOCKER_DB_URL="postgresql://postgres:postgres@localhost:${DOCKER_DB_PORT}/learnflow"
 
 # Colors (disabled when not a tty)
@@ -129,9 +129,37 @@ start_docker_database() {
   log "Starting PostgreSQL via Docker (port ${DOCKER_DB_PORT})..."
   $compose_cmd up -d postgres
 
+  # Container may be "up" while host port binding failed (e.g. port already in use).
+  if ! port_is_listening "${DOCKER_DB_PORT}"; then
+    warn "Port ${DOCKER_DB_PORT} is not listening — recreating Postgres container..."
+    docker rm -f learnflow-postgres &>/dev/null || true
+    $compose_cmd up -d postgres
+    sleep 2
+    if ! port_is_listening "${DOCKER_DB_PORT}"; then
+      error "Port ${DOCKER_DB_PORT} is unavailable (another service may be using it)."
+      error "Stop the conflicting service or set DOCKER_DB_PORT to a free port."
+      return 1
+    fi
+  fi
+
   set_database_url "$DOCKER_DB_URL"
-  wait_for_db
+  if ! wait_for_db; then
+    return 1
+  fi
   success "Docker PostgreSQL is ready."
+  return 0
+}
+
+port_is_listening() {
+  local port="$1"
+  if command -v ss &>/dev/null; then
+    ss -tln 2>/dev/null | grep -qE ":${port}[[:space:]]"
+    return $?
+  fi
+  if command -v nc &>/dev/null; then
+    nc -z localhost "$port" &>/dev/null
+    return $?
+  fi
   return 0
 }
 

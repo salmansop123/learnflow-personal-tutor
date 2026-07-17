@@ -204,9 +204,6 @@ def complete_onboarding(
         raise ValueError("User not found")
 
     tier = body.education_tier or ""
-    needs_exam = tier in ("UNDERGRADUATE", "POSTGRADUATE", "DOCTORAL") or (
-        body.education_level in (EducationLevel.UNIVERSITY, EducationLevel.JOB_TEST)
-    )
 
     university_level = body.university_level
     if university_level is None and tier in (
@@ -220,9 +217,6 @@ def complete_onboarding(
             university_level = UniversityLevel.MASTERS
         elif tier == "DOCTORAL":
             university_level = UniversityLevel.PHD
-
-    if needs_exam and not body.exam_type:
-        raise ValueError("Exam or test type is required")
 
     if not body.learning_styles:
         raise ValueError("Select at least one learning style")

@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { buildAISystemPrompt } from "@/lib/ai-context";
 import { handleRouteError, jsonError, parseJsonBody } from "@/lib/api-route";
+import { consumeAiUsage } from "@/lib/ai-usage";
 import { requireUserId } from "@/lib/notes-auth";
 import { getSummaryModel } from "@/lib/openrouter";
 import { getProfile } from "@/lib/profile";
@@ -22,6 +23,7 @@ export async function POST(req: Request) {
     }
 
     const body = await parseJsonBody(req, bodySchema);
+    await consumeAiUsage(userId, "summary");
     const profile = await getProfile(userId);
     const profileContext = buildAISystemPrompt(profile, {
       subject: body.subject ?? undefined,

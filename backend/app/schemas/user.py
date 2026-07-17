@@ -13,3 +13,11 @@ class UserUpdate(BaseModel):
 
 class UserPlanUpdate(BaseModel):
     plan: str = Field(description="FREE, PRO, PREMIUM_PLUS, or ENTERPRISE")
+
+
+class UserStripeUpdate(BaseModel):
+    stripe_customer_id: str | None = Field(None, alias="stripeCustomerId")
+    stripe_subscription_id: str | None = Field(None, alias="stripeSubscriptionId")
+    plan: str | None = None
+
+    model_config = ConfigDict(populate_by_name=True)

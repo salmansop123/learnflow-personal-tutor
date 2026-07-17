@@ -32,7 +32,7 @@ import {
   snapshotProfileForm,
   type ProfileValidationResult,
 } from "@/lib/profile-change-utils";
-import { resetProfileClient, updateProfileClient } from "@/lib/profile";
+import { resetProfileClient, updateProfileClient, fetchProfileClient } from "@/lib/profile";
 import {
   detectPossibleTypo,
   looksLikeSubjectName,
@@ -84,6 +84,8 @@ export function ProfileEditForm({ profile }: { profile: StudentProfile }) {
   const [subjectInlineError, setSubjectInlineError] = useState<string | null>(
     null
   );
+  const [isSavingSubjects, setIsSavingSubjects] = useState(false);
+  const subjectSaveVersion = useRef(0);
 
   const currentSnapshot = useMemo(() => snapshotProfileForm(form), [form]);
   const pendingChanges = useMemo(
@@ -158,6 +160,34 @@ export function ProfileEditForm({ profile }: { profile: StudentProfile }) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  async function persistSubjectNames(nextSubjects: string[]) {
+    const version = ++subjectSaveVersion.current;
+    setIsSavingSubjects(true);
+    try {
+      const updated = await updateProfileClient({ subjectNames: nextSubjects });
+      if (version !== subjectSaveVersion.current) return;
+      const saved = updated.subjectNames ?? nextSubjects;
+      setForm((prev) => ({ ...prev, subjectNames: saved }));
+      setOriginalValues((prev) => ({ ...prev, subjectNames: saved }));
+      router.refresh();
+    } catch (err) {
+      if (version !== subjectSaveVersion.current) return;
+      toastError(err, "Failed to save subjects");
+      try {
+        const profile = await fetchProfileClient();
+        const savedSubjects = profile.subjectNames ?? [];
+        setForm((prev) => ({ ...prev, subjectNames: savedSubjects }));
+        setOriginalValues((prev) => ({ ...prev, subjectNames: savedSubjects }));
+      } catch {
+        /* keep local state if refetch fails */
+      }
+    } finally {
+      if (version === subjectSaveVersion.current) {
+        setIsSavingSubjects(false);
+      }
+    }
+  }
+
   function addSubjectPill(name: string) {
     setTypoBanner(null);
     setSubjectInlineError(null);
@@ -165,7 +195,9 @@ export function ProfileEditForm({ profile }: { profile: StudentProfile }) {
       (s) => s.toLowerCase() === name.toLowerCase()
     );
     if (!exists) {
-      patch("subjectNames", [...form.subjectNames, name]);
+      const nextSubjects = [...form.subjectNames, name];
+      patch("subjectNames", nextSubjects);
+      void persistSubjectNames(nextSubjects);
     }
   }
 
@@ -405,15 +437,26 @@ export function ProfileEditForm({ profile }: { profile: StudentProfile }) {
       </section>
 
       <section className="rounded-xl border p-4 space-y-4">
-        <h3 className="font-semibold">Subjects</h3>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="font-semibold">Subjects</h3>
+          {isSavingSubjects ? (
+            <span className="text-xs text-muted-foreground">Saving…</span>
+          ) : (
+            <span className="text-xs text-muted-foreground">
+              Subjects save automatically
+            </span>
+          )}
+        </div>
         <SubjectPillInput
           value={form.subjectNames}
           onChange={(v) => {
             patch("subjectNames", v);
             setSubjectInlineError(null);
+            void persistSubjectNames(v);
           }}
           suggestionSubjects={form.subjectNames}
           onRequestAddSubject={handleSubjectAdd}
+          disabled={isSavingSubjects}
           afterInput={
             <>
               {subjectInlineError ? (
@@ -482,11 +525,11 @@ export function ProfileEditForm({ profile }: { profile: StudentProfile }) {
 
       {needsExamStep(form.educationLevel ?? "", form.educationTier) ? (
         <section className="rounded-xl border p-4 space-y-4">
-          <h3 className="font-semibold">Exam preparation</h3>
+          <h3 className="font-semibold">Exam preparation (optional)</h3>
           <Input
             value={form.examType ?? ""}
             onChange={(e) => patch("examType", e.target.value || null)}
-            placeholder="Exam type"
+            placeholder="Exam type (optional)"
             className="bg-white dark:bg-card/80"
           />
           <textarea

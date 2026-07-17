@@ -77,7 +77,7 @@ export function PastSessionRow({ session }: { session: StudySessionRow }) {
             <Input
               value={deleteReason}
               onChange={(e) => setDeleteReason(e.target.value)}
-              placeholder="Add a reason (optional) — e.g. 'Created by mistake'"
+              placeholder="Add a reason (optional) e.g. 'Created by mistake'"
               className="mt-4"
               disabled={isPending}
             />

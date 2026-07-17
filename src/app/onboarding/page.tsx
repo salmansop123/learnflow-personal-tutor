@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { OnboardingWizard } from "@/components/profile/OnboardingWizard";
 import { SyncOnboardingSession } from "@/components/profile/SyncOnboardingSession";
 import { auth } from "@/lib/auth";
-import { getProfile } from "@/lib/profile";
+import { getProfileOptional } from "@/lib/profile";
 
 export default async function OnboardingPage() {
   const session = await auth();
@@ -16,12 +16,11 @@ export default async function OnboardingPage() {
   }
 
   let profileComplete = false;
-  try {
-    const profile = await getProfile(session.user.id);
-    profileComplete = profile.onboardingComplete;
-  } catch {
-    /* backend may be down */
+  const profile = await getProfileOptional(session.user.id);
+  if (!profile) {
+    redirect("/login?reason=account_missing");
   }
+  profileComplete = profile.onboardingComplete;
 
   if (profileComplete) {
     return (

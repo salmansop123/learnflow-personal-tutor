@@ -49,6 +49,12 @@ class User(Base):
     emailVerified: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     image: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     plan: Mapped[Plan] = mapped_column(Enum(Plan), default=Plan.FREE)
+    stripeCustomerId: Mapped[Optional[str]] = mapped_column(
+        String, unique=True, nullable=True
+    )
+    stripeSubscriptionId: Mapped[Optional[str]] = mapped_column(
+        String, nullable=True
+    )
     language: Mapped[str] = mapped_column(String, default="en")
     educationLevel: Mapped[Optional[EducationLevel]] = mapped_column(
         Enum(EducationLevel), nullable=True
@@ -124,6 +130,42 @@ class User(Base):
         back_populates="user"
     )
     reminders: Mapped[list["Reminder"]] = relationship(back_populates="user")
+    aiUsage: Mapped[Optional["AIUsage"]] = relationship(
+        back_populates="user", uselist=False
+    )
+
+
+class AIUsage(Base):
+    """Feature-based AI usage counters per user (tokens kept for internal monitoring)."""
+
+    __tablename__ = "AIUsage"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=cuid)
+    userId: Mapped[str] = mapped_column(
+        String, ForeignKey("User.id", ondelete="CASCADE"), unique=True, index=True
+    )
+    subscriptionPlan: Mapped[str] = mapped_column(String, default="FREE")
+    dailyChatUsed: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    monthlyChatUsed: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    quizUsed: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    assignmentUsed: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    pdfAnalysisUsed: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    summaryUsed: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    studyPlanUsed: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    tokensUsed: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    dailyResetAt: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    resetDate: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    createdAt: Mapped[datetime] = mapped_column(
+        DateTime, default=_utcnow, server_default=func.now()
+    )
+    updatedAt: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=_utcnow,
+        server_default=func.now(),
+        onupdate=_utcnow,
+    )
+
+    user: Mapped["User"] = relationship(back_populates="aiUsage")
 
 
 class StudySession(Base):

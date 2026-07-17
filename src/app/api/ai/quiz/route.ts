@@ -4,6 +4,7 @@ import { z } from "zod";
 import { buildAISystemPrompt } from "@/lib/ai-context";
 import { parseQuizJsonText } from "@/lib/quiz-parse";
 import { handleRouteError, jsonError, parseJsonBody } from "@/lib/api-route";
+import { consumeAiUsage } from "@/lib/ai-usage";
 import { requireUserId } from "@/lib/notes-auth";
 import { getQuizModel } from "@/lib/openrouter";
 import { getProfile } from "@/lib/profile";
@@ -103,6 +104,7 @@ export async function POST(req: Request) {
     }
 
     const body = await parseJsonBody(req, requestSchema);
+    await consumeAiUsage(userId, "quiz");
     const profile = await getProfile(userId);
     const profileContext = buildAISystemPrompt(profile, {
       subject: body.subject,

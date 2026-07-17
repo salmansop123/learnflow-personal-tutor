@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { handleRouteError, jsonError } from "@/lib/api-route";
+import { consumeAiUsage } from "@/lib/ai-usage";
 import { isAllowedDocument } from "@/lib/document-constants";
 import { extractTextFromFile } from "@/lib/document-extract-server";
 
@@ -22,6 +23,13 @@ export async function POST(req: Request) {
 
     if (!isAllowedDocument(file)) {
       return jsonError("Unsupported file type", 400);
+    }
+
+    const name = file.name.toLowerCase();
+    const isPdf =
+      name.endsWith(".pdf") || file.type === "application/pdf";
+    if (isPdf) {
+      await consumeAiUsage(session.user.id, "pdf_analysis");
     }
 
     const { text, extension } = await extractTextFromFile(file);

@@ -58,7 +58,7 @@ const BASE_STEPS: StepDef[] = [
   { id: 2, title: "Your education", subtitle: "Level and grade or year" },
   { id: 3, title: "Your subjects", subtitle: "What you are studying" },
   { id: 4, title: "Study habits", subtitle: "Goals and learning style" },
-  { id: 5, title: "Exam preparation", subtitle: "What test you are preparing for" },
+  { id: 5, title: "Exam preparation", subtitle: "Optional — share what test you are preparing for" },
 ];
 
 export function OnboardingWizard({
@@ -183,10 +183,6 @@ export function OnboardingWizard({
       if (styles.length === 0)
         next.learningStyles = "Select at least one learning style";
     }
-    if (step === 5 && needsExamStep(formData.educationLevel, formData.educationTier)) {
-      if (!formData.examType?.trim())
-        next.examType = "Select or enter your exam type";
-    }
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -232,6 +228,8 @@ export function OnboardingWizard({
       if (!needsExamStep(formData.educationLevel, formData.educationTier)) {
         payload.examType = null;
         payload.examPrepDetails = null;
+      } else if (!payload.examType?.trim() || payload.examType === "Other") {
+        payload.examType = null;
       }
       await submitOnboarding(payload);
       localStorage.removeItem(ONBOARDING_DRAFT_KEY);

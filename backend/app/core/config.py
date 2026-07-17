@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     )
 
     database_url: str = (
-        "postgresql://postgres:postgres@localhost:5433/learnflow"
+        "postgresql://postgres:postgres@localhost:5434/learnflow"
     )
     api_host: str = "0.0.0.0"
     api_port: int = 8000

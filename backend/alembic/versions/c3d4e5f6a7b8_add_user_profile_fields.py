@@ -11,6 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from app.db.migration_helpers import column_exists, enum_type_exists
+
 revision: str = "c3d4e5f6a7b8"
 down_revision: Union[str, None] = "b2c3d4e5f6a7"
 branch_labels: Union[str, Sequence[str], None] = None
@@ -36,21 +38,28 @@ study_time_enum = postgresql.ENUM(
 
 
 def upgrade() -> None:
-    op.execute(
-        "CREATE TYPE educationlevel AS ENUM "
-        "('SCHOOL', 'COLLEGE', 'UNIVERSITY', 'JOB_TEST')"
-    )
-    op.execute(
-        "CREATE TYPE universitylevel AS ENUM ('BACHELORS', 'MASTERS', 'PHD')"
-    )
-    op.execute(
-        "CREATE TYPE learningstyle AS ENUM "
-        "('SHORT_NOTES', 'DETAILED_EXPLANATIONS', 'VISUAL_LEARNING', 'QUIZ_BASED')"
-    )
-    op.execute(
-        "CREATE TYPE studytime AS ENUM "
-        "('MORNING', 'AFTERNOON', 'EVENING', 'NIGHT')"
-    )
+    if column_exists("User", "onboardingComplete"):
+        return
+
+    if not enum_type_exists("educationlevel"):
+        op.execute(
+            "CREATE TYPE educationlevel AS ENUM "
+            "('SCHOOL', 'COLLEGE', 'UNIVERSITY', 'JOB_TEST')"
+        )
+    if not enum_type_exists("universitylevel"):
+        op.execute(
+            "CREATE TYPE universitylevel AS ENUM ('BACHELORS', 'MASTERS', 'PHD')"
+        )
+    if not enum_type_exists("learningstyle"):
+        op.execute(
+            "CREATE TYPE learningstyle AS ENUM "
+            "('SHORT_NOTES', 'DETAILED_EXPLANATIONS', 'VISUAL_LEARNING', 'QUIZ_BASED')"
+        )
+    if not enum_type_exists("studytime"):
+        op.execute(
+            "CREATE TYPE studytime AS ENUM "
+            "('MORNING', 'AFTERNOON', 'EVENING', 'NIGHT')"
+        )
 
     op.add_column(
         "User",

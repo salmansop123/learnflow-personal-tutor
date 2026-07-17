@@ -48,6 +48,8 @@ class UserResponse(BaseModel):
     language: str = "en"
     education_level: EducationLevel | None = Field(None, alias="educationLevel")
     onboarding_complete: bool = Field(False, alias="onboardingComplete")
+    stripe_customer_id: str | None = Field(None, alias="stripeCustomerId")
+    stripe_subscription_id: str | None = Field(None, alias="stripeSubscriptionId")
 
     model_config = ConfigDict(
         from_attributes=True,

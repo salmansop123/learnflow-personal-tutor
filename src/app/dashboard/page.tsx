@@ -1,20 +1,16 @@
 import { redirect } from "next/navigation";
 
 import { ActivityChart } from "@/components/dashboard/ActivityChart";
+import { AiUsageNotifications } from "@/components/dashboard/AiUsageNotifications";
+import { AiUsageSection } from "@/components/dashboard/AiUsageSection";
 import { RecentChats } from "@/components/dashboard/RecentChats";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { SubjectStatsCard } from "@/components/dashboard/SubjectStatsCard";
 import { UpcomingReminders } from "@/components/dashboard/UpcomingReminders";
 import { ProfileCompletionBanner } from "@/components/dashboard/ProfileCompletionBanner";
 import { PageHeader } from "@/components/layout/PageHeader";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { auth } from "@/lib/auth";
+import { getAiUsage } from "@/lib/ai-usage";
 import { getDashboardPageData } from "@/lib/dashboard";
 import { getProfile, getProfileCompletionScore } from "@/lib/profile";
 import { getSubjectStudyStats } from "@/lib/study";
@@ -28,10 +24,11 @@ export default async function DashboardPage() {
 
   const today = format(new Date(), "yyyy-MM-dd");
 
-  const [data, profile, subjectStats] = await Promise.all([
+  const [data, profile, subjectStats, aiUsage] = await Promise.all([
     getDashboardPageData(session.user.id),
     getProfile(session.user.id).catch(() => null),
     getSubjectStudyStats(session.user.id, today).catch(() => []),
+    getAiUsage(session.user.id).catch(() => null),
   ]);
   const profileSubjects = profile?.subjectNames ?? [];
   const completionPct = profile
@@ -47,6 +44,7 @@ export default async function DashboardPage() {
           (!profile.educationArchetype || !profile.educationTier)
         }
       />
+      <AiUsageNotifications usage={aiUsage} />
       <PageHeader
         title="Overview"
         description={
@@ -78,6 +76,8 @@ export default async function DashboardPage() {
           icon="brain"
         />
       </div>
+
+      {aiUsage ? <AiUsageSection usage={aiUsage} /> : null}
 
       <div className="grid gap-3 lg:grid-cols-3">
         <div className="flex flex-col gap-4 lg:col-span-2">

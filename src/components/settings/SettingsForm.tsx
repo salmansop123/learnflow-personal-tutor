@@ -175,7 +175,7 @@ export function SettingsForm({ profile }: { profile: UserProfile }) {
             <a href="/dashboard/billing" className="text-primary hover:underline">
               Billing
             </a>{" "}
-            page. Payment processing is not enabled in this MVP.
+            page. Paid plans use secure Stripe checkout.
           </p>
         </CardContent>
       </Card>

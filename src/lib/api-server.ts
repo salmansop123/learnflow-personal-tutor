@@ -34,12 +34,28 @@ function parseErrorPayload(
 ): { message: string; details?: unknown } {
   try {
     const data = JSON.parse(text) as {
-      detail?: string | { msg?: string }[];
+      detail?:
+        | string
+        | { msg?: string }[]
+        | { success?: boolean; message?: string; overview?: unknown };
       error?: string;
       message?: string;
     };
     if (typeof data.detail === "string") {
       return { message: data.detail };
+    }
+    if (
+      data.detail &&
+      typeof data.detail === "object" &&
+      !Array.isArray(data.detail) &&
+      "message" in data.detail
+    ) {
+      return {
+        message: String(
+          (data.detail as { message?: string }).message ?? "Request failed"
+        ),
+        details: data.detail,
+      };
     }
     if (Array.isArray(data.detail) && data.detail[0]?.msg) {
       return { message: data.detail[0].msg, details: data.detail };

@@ -1,18 +1,30 @@
 import { serverApiFetch } from "@/lib/api-server";
-import { getProfile } from "@/lib/profile";
 import type { EducationLevel } from "@/types/profile";
 import type { UserProfile } from "@/types/user";
 
 export async function getUserProfile(userId: string): Promise<UserProfile> {
-  const p = await getProfile(userId);
+  const user = await serverApiFetch<{
+    id: string;
+    name: string | null;
+    email: string;
+    image: string | null;
+    plan: UserProfile["plan"];
+    language: string;
+    educationLevel: EducationLevel | null;
+    stripeCustomerId?: string | null;
+    stripeSubscriptionId?: string | null;
+  }>("/users/me", userId);
+
   return {
-    id: p.id,
-    name: p.name,
-    email: p.email,
-    image: p.image,
-    plan: p.plan,
-    language: p.language,
-    educationLevel: p.educationLevel,
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    image: user.image,
+    plan: user.plan,
+    language: user.language,
+    educationLevel: user.educationLevel,
+    stripeCustomerId: user.stripeCustomerId ?? null,
+    stripeSubscriptionId: user.stripeSubscriptionId ?? null,
   };
 }
 
@@ -42,4 +54,49 @@ export async function updateUserPlan(
     method: "PATCH",
     body: JSON.stringify({ plan }),
   });
+}
+
+export async function updateUserStripe(
+  userId: string,
+  data: {
+    stripeCustomerId?: string | null;
+    stripeSubscriptionId?: string | null;
+    plan?: string;
+  }
+): Promise<UserProfile> {
+  return serverApiFetch<UserProfile>("/users/me/stripe", userId, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function syncStripeCustomerPlan(
+  customerId: string,
+  data: {
+    stripeSubscriptionId?: string | null;
+    plan?: string;
+  }
+): Promise<UserProfile> {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) throw new Error("AUTH_SECRET is not configured");
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/v1/users/stripe/customer/${encodeURIComponent(customerId)}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${secret}`,
+      },
+      body: JSON.stringify(data),
+      cache: "no-store",
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `Stripe sync failed (${res.status})`);
+  }
+
+  return res.json() as Promise<UserProfile>;
 }

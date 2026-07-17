@@ -144,6 +144,19 @@ def create_session(
         timeLogCompleted=False,
     )
     db.add(session)
+
+    user = db.scalar(select(User).where(User.id == user_id))
+    if user:
+        merged = list(user.subjectNames or [])
+        seen = {name.lower() for name in merged}
+        for subject in subjects:
+            key = subject.lower()
+            if key not in seen:
+                merged.append(subject)
+                seen.add(key)
+        user.subjectNames = merged
+        user.totalSubjects = len(merged)
+
     db.commit()
     db.refresh(session)
     return _session_item(session)

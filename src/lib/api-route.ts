@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { AiUsageLimitError } from "@/lib/ai-usage";
+
 export function jsonError(
   message: string,
   status: number,
@@ -9,6 +11,8 @@ export function jsonError(
   return NextResponse.json(
     {
       error: message,
+      success: status === 429 ? false : undefined,
+      message: status === 429 ? message : undefined,
       ...(details !== undefined ? { details } : {}),
     },
     { status }
@@ -16,6 +20,18 @@ export function jsonError(
 }
 
 export function handleRouteError(error: unknown): NextResponse {
+  if (error instanceof AiUsageLimitError) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: error.message,
+        error: error.message,
+        overview: error.overview,
+      },
+      { status: 429 }
+    );
+  }
+
   if (error instanceof z.ZodError) {
     return jsonError("Invalid request", 400, error.flatten());
   }

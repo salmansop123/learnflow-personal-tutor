@@ -24,11 +24,15 @@ function PricingCard({
   interval,
   variant,
   currentPlan,
+  stripeEnabled = false,
+  hasStripeCustomer = false,
 }: {
   plan: PricingPlan;
   interval: BillingInterval;
   variant: "marketing" | "billing";
   currentPlan?: UserPlan;
+  stripeEnabled?: boolean;
+  hasStripeCustomer?: boolean;
 }) {
   const styles = planAccentStyles[plan.accent];
   const savings = interval === "yearly" ? getSavingsLabel(plan) : null;
@@ -147,7 +151,10 @@ function PricingCard({
               targetPlan={userPlan}
               currentPlan={currentPlan}
               planName={plan.name}
+              interval={interval}
               highlighted={plan.featured}
+              stripeEnabled={stripeEnabled}
+              hasStripeCustomer={hasStripeCustomer}
             />
           ) : (
             <Link
@@ -175,11 +182,15 @@ export function PricingTable({
   compact = false,
   variant = "marketing",
   currentPlan,
+  stripeEnabled = false,
+  hasStripeCustomer = false,
 }: {
   showHeading?: boolean;
   compact?: boolean;
   variant?: "marketing" | "billing";
   currentPlan?: UserPlan;
+  stripeEnabled?: boolean;
+  hasStripeCustomer?: boolean;
 }) {
   const [interval, setInterval] = useState<BillingInterval>("monthly");
 
@@ -224,7 +235,7 @@ export function PricingTable({
             </h2>
             <p className="mt-4 text-lg text-slate-600">
               {variant === "billing"
-                ? "Compare tiers and switch plans instantly in MVP mode — no payment gateway yet."
+                ? "Compare tiers and subscribe with secure Stripe checkout."
                 : "Start free, level up for exams, or go Premium+ for competitive prep. Transparent pricing built for students."}
             </p>
           </motion.div>
@@ -276,6 +287,8 @@ export function PricingTable({
               interval={interval}
               variant={variant}
               currentPlan={currentPlan}
+              stripeEnabled={stripeEnabled}
+              hasStripeCustomer={hasStripeCustomer}
             />
           ))}
         </motion.div>
@@ -285,8 +298,10 @@ export function PricingTable({
           className="mt-10 text-center text-sm text-slate-500"
         >
           {variant === "billing"
-            ? "No Stripe or payment processing in this MVP. Plan changes apply immediately for testing."
-            : "All prices in USD. Secure checkout and team billing arrive in a future release."}
+            ? stripeEnabled
+              ? "Payments are processed securely by Stripe. Manage cards and invoices from your billing portal."
+              : "Add Stripe keys to .env.local to enable checkout (see .env.example)."
+            : "All prices in USD. Secure Stripe checkout for paid plans."}
         </motion.p>
       </motion.div>
     </section>

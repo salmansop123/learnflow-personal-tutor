@@ -5,6 +5,8 @@ export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const onboardingComplete = req.auth?.user?.onboardingComplete ?? false;
   const pathname = req.nextUrl.pathname;
+  const accountMissing =
+    req.nextUrl.searchParams.get("reason") === "account_missing";
 
   const isDashboard = pathname.startsWith("/dashboard");
   const isOnboarding = pathname.startsWith("/onboarding");
@@ -24,7 +26,7 @@ export default auth((req) => {
   const isAuthPage =
     pathname === "/login" || pathname === "/register";
 
-  if (isLoggedIn && isAuthPage) {
+  if (isLoggedIn && isAuthPage && !accountMissing) {
     const dest = onboardingComplete ? "/dashboard" : "/onboarding";
     return NextResponse.redirect(new URL(dest, req.url));
   }

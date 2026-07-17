@@ -10,7 +10,7 @@ import { Testimonials } from "@/components/marketing/Testimonials";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "LearnFlow — AI-Powered Personal Tutor",
+  title: "LearnFlow AI-Powered Personal Tutor",
   description:
     "Study smarter with AI tutoring, smart notes, adaptive quizzes, and structured study plans.",
 };

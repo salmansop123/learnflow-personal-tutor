@@ -10,4 +10,6 @@ export interface UserProfile {
   plan: UserPlan;
   language: string;
   educationLevel: EducationLevel | null;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
 }

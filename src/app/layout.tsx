@@ -18,11 +18,11 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "LearnFlow — AI-Powered Personal Tutor",
+  title: "LearnFlow AI-Powered Personal Tutor",
   description:
     "LearnFlow helps students study smarter with AI tutoring, notes, quizzes, and study planning.",
   openGraph: {
-    title: "LearnFlow — AI-Powered Personal Tutor",
+    title: "LearnFlow AI-Powered Personal Tutor",
     description:
       "Study smarter with AI tutoring, notes, quizzes, and structured study plans.",
     images: [
@@ -30,14 +30,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "LearnFlow — AI-Powered Personal Tutor",
+        alt: "LearnFlow AI-Powered Personal Tutor",
       },
     ],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "LearnFlow — AI-Powered Personal Tutor",
+    title: "LearnFlow AI-Powered Personal Tutor",
     description:
       "Study smarter with AI tutoring, notes, quizzes, and structured study plans.",
     images: ["/og-image.png"],

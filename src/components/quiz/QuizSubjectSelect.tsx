@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { fetchProfileClient } from "@/lib/profile";
+import { fetchProfileClient, updateProfileClient } from "@/lib/profile";
 import { normalizeSubjectName } from "@/lib/subject-normalizer";
 import { cn } from "@/lib/utils";
 
@@ -74,7 +74,24 @@ export function QuizSubjectSelect({
     setSelectionSource("custom");
     onChange(normalized);
     setCustomInput(normalized);
+    void saveSubjectToProfile(normalized);
   };
+
+  async function saveSubjectToProfile(subject: string) {
+    if (
+      profileSubjects.some((s) => s.toLowerCase() === subject.toLowerCase())
+    ) {
+      return;
+    }
+    try {
+      const updated = await updateProfileClient({
+        subjectNames: [...profileSubjects, subject],
+      });
+      setProfileSubjects(updated.subjectNames ?? []);
+    } catch {
+      /* quiz can still use the typed subject */
+    }
+  }
 
   if (loading) {
     return (

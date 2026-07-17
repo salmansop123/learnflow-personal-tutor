@@ -1,10 +1,10 @@
-import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { GlobalStudyTimer } from "@/components/study/GlobalStudyTimer";
 import { SubjectTimeLogModal } from "@/components/study/SubjectTimeLogModal";
-import { getProfile, getProfileCompletionScore } from "@/lib/profile";
+import { auth } from "@/lib/auth";
+import { getProfileCompletionScore, getProfileOptional } from "@/lib/profile";
 
 export default async function DashboardLayout({
   children,
@@ -16,13 +16,12 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  let profileCompletionPct = 100;
-  try {
-    const profile = await getProfile(session.user.id);
-    profileCompletionPct = getProfileCompletionScore(profile);
-  } catch {
-    /* backend unavailable */
+  const profile = await getProfileOptional(session.user.id);
+  if (!profile) {
+    redirect("/login?reason=account_missing");
   }
+
+  const profileCompletionPct = getProfileCompletionScore(profile);
 
   return (
     <DashboardShell

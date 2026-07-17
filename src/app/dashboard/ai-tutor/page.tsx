@@ -4,7 +4,7 @@ import { AiTutorClient } from "@/components/ai-tutor/AiTutorClient";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { auth } from "@/lib/auth";
 import { getConversation, listConversations } from "@/lib/conversations";
-import { getProfile } from "@/lib/profile";
+import { getProfileOptional } from "@/lib/profile";
 
 type PageProps = {
   searchParams: { c?: string };
@@ -19,10 +19,12 @@ export default async function AiTutorPage({ searchParams }: PageProps) {
   const params = searchParams;
   const userId = session.user.id;
 
-  const [conversations, profile] = await Promise.all([
-    listConversations(userId),
-    getProfile(userId),
-  ]);
+  const profile = await getProfileOptional(userId);
+  if (!profile) {
+    redirect("/login?reason=account_missing");
+  }
+
+  const conversations = await listConversations(userId);
 
   const activeConversationId =
     params.c ?? conversations[0]?.id ?? null;
