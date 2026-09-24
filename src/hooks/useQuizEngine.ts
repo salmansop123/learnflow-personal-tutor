@@ -6,6 +6,7 @@ import { toast } from "@/lib/toast";
 import { computeQuizResults, type QuizResultsSummary } from "@/lib/quiz-results";
 import { saveQuizAttemptClient } from "@/lib/quiz";
 import { totalTimeLimitSeconds } from "@/lib/quiz-paper";
+import { toastRemainingQuota } from "@/components/ai-usage/AiUsageQuotaBanner";
 import type {
   Question,
   QuestionResult,
@@ -201,6 +202,7 @@ export function useQuizEngine() {
 
       setQuestions(data.questions);
       setPhase("active");
+      void toastRemainingQuota("quiz");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to generate quiz");
       setPhase("setup");

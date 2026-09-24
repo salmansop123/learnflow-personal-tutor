@@ -9,6 +9,7 @@ import {
   deleteConversationAction,
   startNewConversationAction,
 } from "@/app/dashboard/ai-tutor/actions";
+import { AiUsageQuotaBanner } from "@/components/ai-usage/AiUsageQuotaBanner";
 import { ChatInterface } from "@/components/ai-tutor/ChatInterface";
 import { ConversationListItem } from "@/components/ai-tutor/ConversationListItem";
 import { LanguageHintBanner } from "@/components/ai-tutor/LanguageHintBanner";
@@ -47,6 +48,7 @@ export function AiTutorClient({
     parseTutorSubjects(activeConversation?.subject)
   );
   const [subjectsOpen, setSubjectsOpen] = useState(false);
+  const [quotaRefresh, setQuotaRefresh] = useState(0);
 
   useEffect(() => {
     setConversations(initialConversations);
@@ -121,6 +123,12 @@ export function AiTutorClient({
 
   return (
     <>
+      <AiUsageQuotaBanner
+        features={["chat", "pdf_analysis"]}
+        refreshToken={quotaRefresh}
+        compact
+        className="shrink-0"
+      />
       <div className="grid min-h-0 flex-1 gap-3 overflow-hidden lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
         <aside className="flex min-h-0 flex-col gap-2 overflow-hidden rounded-xl border bg-card p-3">
           <Button
@@ -213,6 +221,7 @@ export function AiTutorClient({
                 subjects={subjectsForChat}
                 profile={profile}
                 initialMessages={activeConversation.messages}
+                onUsageConsumed={() => setQuotaRefresh((n) => n + 1)}
               />
             </div>
           ) : (

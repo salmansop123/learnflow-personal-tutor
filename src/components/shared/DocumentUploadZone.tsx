@@ -12,6 +12,7 @@ import { useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DOCUMENT_ACCEPT } from "@/lib/document-constants";
 import { cn } from "@/lib/utils";
+import { toastRemainingQuota } from "@/components/ai-usage/AiUsageQuotaBanner";
 
 export type UploadedDocument = {
   id: string;
@@ -51,8 +52,13 @@ async function extractFile(file: File): Promise<{
   };
 }
 
-export function useDocumentUpload(maxFiles = 3) {
+export function useDocumentUpload(
+  maxFiles = 3,
+  onPdfAnalyzed?: () => void
+) {
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
+  const onPdfAnalyzedRef = useRef(onPdfAnalyzed);
+  onPdfAnalyzedRef.current = onPdfAnalyzed;
 
   const uploadFile = useCallback(
     async (file: File) => {
@@ -82,6 +88,13 @@ export function useDocumentUpload(maxFiles = 3) {
               : d
           )
         );
+        const name = file.name.toLowerCase();
+        const isPdf =
+          name.endsWith(".pdf") || file.type === "application/pdf";
+        if (isPdf) {
+          void toastRemainingQuota("pdf_analysis");
+          onPdfAnalyzedRef.current?.();
+        }
       } catch (e) {
         const errMsg = e instanceof Error ? e.message : "Upload failed";
         setDocuments((prev) =>

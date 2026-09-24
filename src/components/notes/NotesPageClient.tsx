@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 
 import { NoteCard } from "@/components/notes/NoteCard";
 import { EmptyState } from "@/components/ui/empty-state";
+import { AiUsageQuotaBanner } from "@/components/ai-usage/AiUsageQuotaBanner";
 import { NoteEditor } from "@/components/notes/NoteEditor";
 import { NotePreview } from "@/components/notes/NotePreview";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,7 @@ export function NotesPageClient({ notes }: { notes: NoteRow[] }) {
   const [mode, setMode] = useState<PanelMode>("empty");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [extraNotes, setExtraNotes] = useState<NoteRow[]>([]);
+  const [quotaRefresh, setQuotaRefresh] = useState(0);
   const fetchingNoteIdRef = useRef<string | null>(null);
 
   const displayNotes = useMemo(() => {
@@ -318,6 +320,11 @@ export function NotesPageClient({ notes }: { notes: NoteRow[] }) {
   if (isEmptyList) {
     return (
       <>
+        <AiUsageQuotaBanner
+          features={["summary"]}
+          refreshToken={quotaRefresh}
+          compact
+        />
         <div className="mx-auto max-w-2xl">
           {mode === "empty" ? (
             <EmptyState
@@ -337,6 +344,11 @@ export function NotesPageClient({ notes }: { notes: NoteRow[] }) {
   return (
     <>
       <div className="min-w-0 space-y-4">
+        <AiUsageQuotaBanner
+          features={["summary"]}
+          refreshToken={quotaRefresh}
+          compact
+        />
         <div className="space-y-4">
           <div className="flex flex-col gap-2 sm:flex-row">
             <Input
@@ -420,6 +432,7 @@ export function NotesPageClient({ notes }: { notes: NoteRow[] }) {
           open={previewOpen && mode === "preview"}
           onClose={handlePreviewClose}
           onEdit={openEdit}
+          onUsageConsumed={() => setQuotaRefresh((n) => n + 1)}
           onNoteUpdated={(updated) => {
             setExtraNotes((prev) => {
               const idx = prev.findIndex((n) => n.id === updated.id);

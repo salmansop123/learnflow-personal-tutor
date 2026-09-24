@@ -16,6 +16,7 @@ import {
 } from "@/lib/note-content";
 import { persistNoteSummary, streamNoteSummary } from "@/lib/note-summarize";
 import { toast } from "@/lib/toast";
+import { toastRemainingQuota } from "@/components/ai-usage/AiUsageQuotaBanner";
 import type { NoteRow } from "@/types/note";
 
 export function NotePreview({
@@ -24,12 +25,14 @@ export function NotePreview({
   onClose,
   onEdit,
   onNoteUpdated,
+  onUsageConsumed,
 }: {
   note: NoteRow | null;
   open: boolean;
   onClose: () => void;
   onEdit: () => void;
   onNoteUpdated?: (note: NoteRow) => void;
+  onUsageConsumed?: () => void;
 }) {
   const router = useRouter();
   const [aiSummary, setAiSummary] = useState(note?.aiSummary ?? "");
@@ -73,6 +76,8 @@ export function NotePreview({
         });
         router.refresh();
         toast.success("Summary generated.");
+        void toastRemainingQuota("summary");
+        onUsageConsumed?.();
       }
     } catch {
       setSummaryError("Failed to generate summary. Please try again.");

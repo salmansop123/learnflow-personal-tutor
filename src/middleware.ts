@@ -2,9 +2,26 @@ import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 export default auth((req) => {
+  const pathname = req.nextUrl.pathname;
+
+  // Admin route protection (separate from user Auth.js)
+  if (pathname.startsWith("/admin")) {
+    if (
+      pathname === "/admin/login" ||
+      pathname.startsWith("/admin/api/")
+    ) {
+      return NextResponse.next();
+    }
+    const adminToken = req.cookies.get("learnflow_admin_token")?.value;
+    if (!adminToken) {
+      return NextResponse.redirect(new URL("/admin/login", req.url));
+    }
+    // Full JWT verification happens in route handlers / layout
+    return NextResponse.next();
+  }
+
   const isLoggedIn = !!req.auth;
   const onboardingComplete = req.auth?.user?.onboardingComplete ?? false;
-  const pathname = req.nextUrl.pathname;
   const accountMissing =
     req.nextUrl.searchParams.get("reason") === "account_missing";
 
@@ -23,8 +40,7 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
-  const isAuthPage =
-    pathname === "/login" || pathname === "/register";
+  const isAuthPage = pathname === "/login" || pathname === "/register";
 
   if (isLoggedIn && isAuthPage && !accountMissing) {
     const dest = onboardingComplete ? "/dashboard" : "/onboarding";

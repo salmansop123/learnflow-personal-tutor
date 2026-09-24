@@ -385,3 +385,21 @@ class VerificationToken(Base):
     identifier: Mapped[str] = mapped_column(String, primary_key=True)
     token: Mapped[str] = mapped_column(String, primary_key=True)
     expires: Mapped[datetime] = mapped_column(DateTime)
+
+
+class AdminAuditLog(Base):
+    """Audit trail for LearnFlow admin panel actions."""
+
+    __tablename__ = "AdminAuditLog"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=cuid)
+    adminEmail: Mapped[str] = mapped_column(String, index=True)
+    action: Mapped[str] = mapped_column(String)
+    targetType: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    targetId: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    details: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    ipAddress: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    userAgent: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    createdAt: Mapped[datetime] = mapped_column(
+        DateTime, default=_utcnow, server_default=func.now(), index=True
+    )

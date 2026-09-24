@@ -107,11 +107,13 @@ export function QuizSetup({
   onCancel,
   isLoading,
   initialConfig,
+  onUsageConsumed,
 }: {
   onStart: (config: QuizSetupConfig) => void;
   onCancel?: () => void;
   isLoading?: boolean;
   initialConfig?: QuizSetupConfig;
+  onUsageConsumed?: () => void;
 }) {
   const [subject, setSubject] = useState(initialConfig?.subject ?? "");
   const [subjectError, setSubjectError] = useState<string | null>(null);
@@ -135,7 +137,7 @@ export function QuizSetup({
     removeDocument,
     readyDocuments,
     isUploading,
-  } = useDocumentUpload(2);
+  } = useDocumentUpload(2, onUsageConsumed);
 
   const referenceContext = useMemo(
     () =>

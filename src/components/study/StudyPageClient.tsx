@@ -10,6 +10,7 @@ import {
   createStudyPlanAction,
   createTaskAction,
 } from "@/app/dashboard/study/actions";
+import { AiUsageQuotaBanner } from "@/components/ai-usage/AiUsageQuotaBanner";
 import { ExportStudySessionsPDF } from "@/components/study/ExportStudySessionsPDF";
 import { ReminderForm } from "@/components/study/ReminderForm";
 import { ReminderList } from "@/components/study/ReminderList";
@@ -47,7 +48,9 @@ export function StudyPageClient({ data }: { data: StudyPageData }) {
   );
 
   return (
-    <div className="grid min-w-0 gap-6 lg:grid-cols-2">
+    <div className="space-y-4">
+      <AiUsageQuotaBanner features={["study_plan"]} compact />
+      <div className="grid min-w-0 gap-6 lg:grid-cols-2">
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Pending</h2>
 
@@ -182,6 +185,7 @@ export function StudyPageClient({ data }: { data: StudyPageData }) {
           </Card>
         ) : null}
       </section>
+    </div>
     </div>
   );
 }

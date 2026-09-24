@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    admin,
     ai,
     ai_usage,
     auth,
@@ -31,3 +32,4 @@ api_router.include_router(ai.router)
 api_router.include_router(ai_usage.router)
 api_router.include_router(reminders.router)
 api_router.include_router(cron.router)
+api_router.include_router(admin.router)

@@ -1,5 +1,6 @@
 import secrets
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -17,6 +18,33 @@ from app.schemas.auth import (
 
 SESSION_MAX_AGE_DAYS = 30
 MAGIC_LINK_EXPIRE_HOURS = 1
+
+
+def _log_user_auth(
+    db: Session,
+    *,
+    user: User,
+    action: str,
+    details: str,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+) -> None:
+    """Record user login/logout/register in the admin audit log (never raises)."""
+    try:
+        from app.services import admin_service
+
+        admin_service.create_audit_log(
+            db,
+            admin_email=user.email,
+            action=action,
+            target_type="user",
+            target_id=user.id,
+            details=details,
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
+    except Exception:
+        pass
 
 
 def _user_to_response(user: User) -> UserResponse:
@@ -52,7 +80,15 @@ def get_user_by_email(db: Session, email: str) -> User | None:
     return db.scalar(select(User).where(User.email == email.lower()))
 
 
-def register_user(db: Session, name: str, email: str, password: str) -> AuthSessionResponse:
+def register_user(
+    db: Session,
+    name: str,
+    email: str,
+    password: str,
+    *,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+) -> AuthSessionResponse:
     email_lower = email.lower()
     existing = get_user_by_email(db, email_lower)
     if existing:
@@ -64,6 +100,15 @@ def register_user(db: Session, name: str, email: str, password: str) -> AuthSess
         db.commit()
         db.refresh(existing)
         session_token = _create_session(db, existing.id)
+        _log_user_auth(
+            db,
+            user=existing,
+            action="USER_LOGIN",
+            details=f"User signed in after completing registration: {existing.email}"
+            + (f" ({existing.name})" if existing.name else ""),
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
         return AuthSessionResponse(
             user=_user_to_response(existing),
             sessionToken=session_token,
@@ -85,13 +130,37 @@ def register_user(db: Session, name: str, email: str, password: str) -> AuthSess
     except Exception:
         pass  # registration succeeds even if email fails
     session_token = _create_session(db, user.id)
+    display = f"{user.name} <{user.email}>" if user.name else user.email
+    _log_user_auth(
+        db,
+        user=user,
+        action="USER_REGISTER",
+        details=f"New user registered: {display}",
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
+    _log_user_auth(
+        db,
+        user=user,
+        action="USER_LOGIN",
+        details=f"User logged in after registration: {display}",
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
     return AuthSessionResponse(
         user=_user_to_response(user),
         sessionToken=session_token,
     )
 
 
-def login_with_password(db: Session, email: str, password: str) -> AuthSessionResponse:
+def login_with_password(
+    db: Session,
+    email: str,
+    password: str,
+    *,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+) -> AuthSessionResponse:
     email_lower = email.lower()
     user = get_user_by_email(db, email_lower)
     if not user or not user.hashedPassword:
@@ -100,6 +169,15 @@ def login_with_password(db: Session, email: str, password: str) -> AuthSessionRe
         raise ValueError("Invalid email or password")
 
     session_token = _create_session(db, user.id)
+    display = f"{user.name} <{user.email}>" if user.name else user.email
+    _log_user_auth(
+        db,
+        user=user,
+        action="USER_LOGIN",
+        details=f"User logged in (email/password): {display}",
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
     return AuthSessionResponse(
         user=_user_to_response(user),
         sessionToken=session_token,
@@ -141,7 +219,14 @@ def request_magic_link(db: Session, email: str) -> None:
     send_magic_link_email(email_lower, magic_link)
 
 
-def verify_magic_link(db: Session, email: str, token: str) -> AuthSessionResponse:
+def verify_magic_link(
+    db: Session,
+    email: str,
+    token: str,
+    *,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+) -> AuthSessionResponse:
     email_lower = email.lower()
     row = db.get(VerificationToken, (email_lower, token))
     if not row:
@@ -166,6 +251,15 @@ def verify_magic_link(db: Session, email: str, token: str) -> AuthSessionRespons
     db.refresh(user)
 
     session_token = _create_session(db, user.id)
+    display = f"{user.name} <{user.email}>" if user.name else user.email
+    _log_user_auth(
+        db,
+        user=user,
+        action="USER_LOGIN",
+        details=f"User logged in (magic link): {display}",
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
     return AuthSessionResponse(
         user=_user_to_response(user),
         sessionToken=session_token,
@@ -195,7 +289,13 @@ def validate_session_token(db: Session, session_token: str) -> UserResponse | No
     return _user_to_response(user)
 
 
-def sync_google_user(db: Session, data: GoogleOAuthRequest) -> UserResponse:
+def sync_google_user(
+    db: Session,
+    data: GoogleOAuthRequest,
+    *,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+) -> UserResponse:
     email_lower = data.email.lower()
     user = get_user_by_email(db, email_lower)
     is_new = user is None
@@ -238,5 +338,46 @@ def sync_google_user(db: Session, data: GoogleOAuthRequest) -> UserResponse:
 
     if is_new:
         send_welcome_email(user.email, user.name)
+        display = f"{user.name} <{user.email}>" if user.name else user.email
+        _log_user_auth(
+            db,
+            user=user,
+            action="USER_REGISTER",
+            details=f"New user registered via Google: {display}",
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
+
+    display = f"{user.name} <{user.email}>" if user.name else user.email
+    _log_user_auth(
+        db,
+        user=user,
+        action="USER_LOGIN",
+        details=f"User logged in (Google): {display}",
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
 
     return _user_to_response(user)
+
+
+def log_user_logout(
+    db: Session,
+    user_id: str,
+    *,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+) -> bool:
+    user = db.get(User, user_id)
+    if not user:
+        return False
+    display = f"{user.name} <{user.email}>" if user.name else user.email
+    _log_user_auth(
+        db,
+        user=user,
+        action="USER_LOGOUT",
+        details=f"User logged out: {display}",
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
+    return True

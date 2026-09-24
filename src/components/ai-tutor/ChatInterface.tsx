@@ -16,6 +16,7 @@ import {
 import { MessageBubble } from "@/components/ai-tutor/MessageBubble";
 import { PinToNotes, type PinToNotesPayload } from "@/components/ai-tutor/PinToNotes";
 import { PinToNotesDialog } from "@/components/ai-tutor/PinToNotesDialog";
+import { toastRemainingQuota } from "@/components/ai-usage/AiUsageQuotaBanner";
 import {
   ChatAttachmentBar,
   useDocumentUpload,
@@ -35,11 +36,13 @@ export function ChatInterface({
   subjects,
   profile,
   initialMessages,
+  onUsageConsumed,
 }: {
   conversationId: string;
   subjects: string[];
   profile: StudentProfile;
   initialMessages: MessageRow[];
+  onUsageConsumed?: () => void;
 }) {
   const subjectLine = serializeTutorSubjects(subjects);
   const hydratedMessages = useMemo(
@@ -53,7 +56,7 @@ export function ChatInterface({
     removeDocument,
     readyDocuments,
     isUploading,
-  } = useDocumentUpload(3);
+  } = useDocumentUpload(3, onUsageConsumed);
 
   const documentContext = useMemo(
     () =>
@@ -110,8 +113,10 @@ export function ChatInterface({
       status === "ready"
     ) {
       router.refresh();
+      void toastRemainingQuota("chat");
+      onUsageConsumed?.();
     }
-  }, [status, router]);
+  }, [status, router, onUsageConsumed]);
 
   const handlePin = (payload: PinToNotesPayload) => {
     setPinPayload({

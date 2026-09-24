@@ -1,7 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, HTTPException, Request
 
-from app.api.deps import DbSession
+from app.api.deps import DbSession, DashboardUserId
 from app.schemas.auth import (
     AuthSessionResponse,
     GoogleOAuthRequest,
@@ -18,20 +17,47 @@ from app.services import auth_service
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+def _client_meta(request: Request) -> tuple[str, str]:
+    forwarded = request.headers.get("x-forwarded-for")
+    ip = (
+        forwarded.split(",")[0].strip()
+        if forwarded
+        else request.headers.get("x-real-ip")
+        or (request.client.host if request.client else "unknown")
+    )
+    ua = request.headers.get("user-agent") or "unknown"
+    return ip, ua
+
+
 @router.post("/register", response_model=AuthSessionResponse)
-def register(body: RegisterRequest, db: DbSession) -> AuthSessionResponse:
+def register(
+    body: RegisterRequest, request: Request, db: DbSession
+) -> AuthSessionResponse:
+    ip, ua = _client_meta(request)
     try:
         return auth_service.register_user(
-            db, body.name, body.email, body.password
+            db,
+            body.name,
+            body.email,
+            body.password,
+            ip_address=ip,
+            user_agent=ua,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/login", response_model=AuthSessionResponse)
-def login(body: LoginRequest, db: DbSession) -> AuthSessionResponse:
+def login(body: LoginRequest, request: Request, db: DbSession) -> AuthSessionResponse:
+    ip, ua = _client_meta(request)
     try:
-        return auth_service.login_with_password(db, body.email, body.password)
+        return auth_service.login_with_password(
+            db,
+            body.email,
+            body.password,
+            ip_address=ip,
+            user_agent=ua,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
 
@@ -46,10 +72,17 @@ def request_magic_link(body: MagicLinkRequest, db: DbSession) -> MessageResponse
 
 @router.post("/magic-link/verify", response_model=AuthSessionResponse)
 def verify_magic_link(
-    body: MagicLinkVerifyRequest, db: DbSession
+    body: MagicLinkVerifyRequest, request: Request, db: DbSession
 ) -> AuthSessionResponse:
+    ip, ua = _client_meta(request)
     try:
-        return auth_service.verify_magic_link(db, body.email, body.token)
+        return auth_service.verify_magic_link(
+            db,
+            body.email,
+            body.token,
+            ip_address=ip,
+            user_agent=ua,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -65,5 +98,24 @@ def validate_session(
 
 
 @router.post("/oauth/google", response_model=UserResponse)
-def google_oauth_sync(body: GoogleOAuthRequest, db: DbSession) -> UserResponse:
-    return auth_service.sync_google_user(db, body)
+def google_oauth_sync(
+    body: GoogleOAuthRequest, request: Request, db: DbSession
+) -> UserResponse:
+    ip, ua = _client_meta(request)
+    return auth_service.sync_google_user(
+        db, body, ip_address=ip, user_agent=ua
+    )
+
+
+@router.post("/logout")
+def logout(
+    request: Request,
+    db: DbSession,
+    user_id: DashboardUserId,
+) -> MessageResponse:
+    """Record USER_LOGOUT in the audit log (called from Next.js before signOut)."""
+    ip, ua = _client_meta(request)
+    auth_service.log_user_logout(
+        db, user_id, ip_address=ip, user_agent=ua
+    )
+    return MessageResponse(message="Logged out")

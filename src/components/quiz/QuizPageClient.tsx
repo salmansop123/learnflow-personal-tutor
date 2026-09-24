@@ -3,8 +3,9 @@
 import { Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 
+import { AiUsageQuotaBanner } from "@/components/ai-usage/AiUsageQuotaBanner";
 import { QuizInterface } from "@/components/quiz/QuizInterface";
 import { QuizResults } from "@/components/quiz/QuizResults";
 import { QuizSetup } from "@/components/quiz/QuizSetup";
@@ -23,6 +24,7 @@ export function QuizPageClient({
   const { data: session } = useSession();
   const engine = useQuizEngine();
   const retakeConfigRef = useRef<QuizSetupConfig | null>(null);
+  const [quotaRefresh, setQuotaRefresh] = useState(0);
   const { correct, total, score } = engine.scoreSummary();
 
   const handleRetake = useCallback(() => {
@@ -37,30 +39,36 @@ export function QuizPageClient({
   const handleNewQuiz = useCallback(() => {
     retakeConfigRef.current = null;
     engine.reset();
+    setQuotaRefresh((n) => n + 1);
     router.refresh();
   }, [engine, router]);
 
   const handleSetupStart = useCallback(
     (setup: QuizSetupConfig) => {
       retakeConfigRef.current = null;
-      void engine.startQuiz(setup);
+      void engine.startQuiz(setup).then(() => {
+        setQuotaRefresh((n) => n + 1);
+      });
     },
     [engine]
   );
 
   if (engine.phase === "loading") {
     return (
-      <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 rounded-xl border bg-card p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
-        <p className="text-sm text-muted-foreground">
-          Generating your quiz paper…
-        </p>
-        <Button type="button" variant="outline" onClick={engine.reset}>
-          Cancel quiz
-        </Button>
-        {engine.error ? (
-          <p className="text-sm text-destructive">{engine.error}</p>
-        ) : null}
+      <div className="space-y-4">
+        <AiUsageQuotaBanner features={["quiz", "pdf_analysis"]} refreshToken={quotaRefresh} compact />
+        <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 rounded-xl border bg-card p-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
+          <p className="text-sm text-muted-foreground">
+            Generating your quiz paper…
+          </p>
+          <Button type="button" variant="outline" onClick={engine.reset}>
+            Cancel quiz
+          </Button>
+          {engine.error ? (
+            <p className="text-sm text-destructive">{engine.error}</p>
+          ) : null}
+        </div>
       </div>
     );
   }
@@ -69,12 +77,14 @@ export function QuizPageClient({
     const retake = retakeConfigRef.current;
     return (
       <div className="space-y-6">
+        <AiUsageQuotaBanner features={["quiz", "pdf_analysis"]} refreshToken={quotaRefresh} compact />
         <QuizSetup
           key={retake ? `retake-${retake.subject}` : "new"}
           initialConfig={retake ?? undefined}
           onStart={handleSetupStart}
           onCancel={engine.reset}
           isLoading={false}
+          onUsageConsumed={() => setQuotaRefresh((n) => n + 1)}
         />
         {engine.error ? (
           <p className="text-sm text-destructive">{engine.error}</p>
@@ -86,29 +96,33 @@ export function QuizPageClient({
 
   if (engine.phase === "results") {
     return (
-      <QuizResults
-        score={score}
-        correct={correct}
-        total={total}
-        timeTaken={engine.timeTakenSeconds}
-        questions={engine.questions}
-        results={engine.results}
-        answers={engine.answers}
-        isSaving={engine.isSaving}
-        savedAttemptId={engine.savedAttemptId}
-        error={engine.error}
-        onRetry={handleNewQuiz}
-        onRetake={handleRetake}
-        onNewQuiz={handleNewQuiz}
-        quizSummary={engine.quizSummary}
-        aiDetectionResults={engine.aiDetectionResults}
-        config={engine.config}
-      />
+      <div className="space-y-4">
+        <AiUsageQuotaBanner features={["quiz", "pdf_analysis"]} refreshToken={quotaRefresh} compact />
+        <QuizResults
+          score={score}
+          correct={correct}
+          total={total}
+          timeTaken={engine.timeTakenSeconds}
+          questions={engine.questions}
+          results={engine.results}
+          answers={engine.answers}
+          isSaving={engine.isSaving}
+          savedAttemptId={engine.savedAttemptId}
+          error={engine.error}
+          onRetry={handleNewQuiz}
+          onRetake={handleRetake}
+          onNewQuiz={handleNewQuiz}
+          quizSummary={engine.quizSummary}
+          aiDetectionResults={engine.aiDetectionResults}
+          config={engine.config}
+        />
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
+      <AiUsageQuotaBanner features={["quiz", "pdf_analysis"]} refreshToken={quotaRefresh} compact />
       {engine.error ? (
         <p className="text-sm text-destructive">{engine.error}</p>
       ) : null}

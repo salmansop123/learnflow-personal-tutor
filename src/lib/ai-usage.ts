@@ -136,3 +136,53 @@ export function usageLimitResponse(error: AiUsageLimitError): Response {
     }
   );
 }
+
+/** Map UI feature keys to overview.features[].feature values from the API. */
+export const FEATURE_STATUS_KEYS: Record<
+  AiFeature,
+  string
+> = {
+  chat: "chat_daily",
+  quiz: "quiz",
+  assignment: "assignment",
+  pdf_analysis: "pdf_analysis",
+  summary: "summary",
+  study_plan: "study_plan",
+};
+
+export function findFeatureStatus(
+  overview: AiUsageOverview | null | undefined,
+  feature: AiFeature
+): AiUsageFeatureStatus | null {
+  if (!overview) return null;
+  const key = FEATURE_STATUS_KEYS[feature];
+  return overview.features.find((f) => f.feature === key) ?? null;
+}
+
+export function formatRemainingQuota(
+  status: AiUsageFeatureStatus | null,
+  label: string
+): string | null {
+  if (!status) return null;
+  if (status.unlimited) {
+    return `Unlimited ${label} on your plan`;
+  }
+  const remaining = status.remaining ?? 0;
+  const limit = status.limit ?? 0;
+  if (remaining <= 0) {
+    return `No ${label} remaining this ${status.period === "day" ? "day" : "month"}`;
+  }
+  return `${remaining} of ${limit} ${label} remaining${
+    status.period === "day" ? " today" : " this month"
+  }`;
+}
+
+/** Client-side fetch of current AI usage overview. */
+export async function fetchAiUsageClient(): Promise<AiUsageOverview> {
+  const res = await fetch("/api/ai-usage", { cache: "no-store" });
+  const data = (await res.json()) as AiUsageOverview & { error?: string };
+  if (!res.ok) {
+    throw new Error(data.error ?? "Failed to load AI usage");
+  }
+  return data;
+}

@@ -113,6 +113,36 @@
     min-height: 100vh;
   }
 
+  /* Admin panel always uses dark text on light surfaces (ignore app dark mode) */
+  .admin-panel {
+    color: #0f172a;
+    --foreground: #0f172a;
+    --muted-foreground: #334155;
+    --background: #f1f5f9;
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --border: #e2e8f0;
+    --input: #ffffff;
+    --ring: #0c2340;
+  }
+
+  .admin-panel input,
+  .admin-panel select,
+  .admin-panel textarea,
+  .admin-panel button:not([class*="bg-"]) {
+    color: #0f172a;
+  }
+
+  .admin-panel table,
+  .admin-panel td,
+  .admin-panel th {
+    color: #0f172a;
+  }
+
+  .admin-panel .admin-muted {
+    color: #334155;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
